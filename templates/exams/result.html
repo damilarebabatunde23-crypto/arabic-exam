@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Exam Result{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-clipboard-check me-2"></i>{{ attempt.exam.title }}</h3>
+        <div class="subtitle">Your detailed result for this exam</div>
+    </div>
+</div>
+
+{% if not attempt.is_released %}
+    <div class="empty-state">
+        <i class="bi bi-hourglass-split"></i>
+        Your answers were submitted successfully. Your result will be announced once your teacher releases it.
+    </div>
+{% else %}
+    {% widthratio attempt.total_score attempt.exam.total_marks 100 as pct %}
+    {% with pct=pct|add:0 %}
+    <div class="card mb-4">
+        <div class="card-body d-flex align-items-center gap-4 flex-wrap">
+            <div class="score-ring" style="--pct: {{ pct }}">
+                <div class="score-ring-inner">
+                    <span class="score-num">{{ attempt.total_score }}</span>
+                    <span class="score-den">out of {{ attempt.exam.total_marks }}</span>
+                </div>
+            </div>
+            <div>
+                <h4 class="fw-800 mb-1">{{ pct }}%</h4>
+                <p class="text-muted mb-0">
+                    {% if pct >= 85 %}Excellent performance, well done!{% elif pct >= 60 %}Good performance, keep it up.{% else %}Needs more review.{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+
+    <h5 class="mb-3 fw-800">Answer Details</h5>
+    {% for answer in answers %}
+        <div class="card answer-review-card mb-3
+            {% if answer.question.question_type == 'essay' %}is-essay
+            {% elif answer.selected_choice.is_correct %}is-correct
+            {% else %}is-incorrect{% endif %}">
+            <div class="card-body">
+                <div class="d-flex align-items-start gap-3">
+                    {% if answer.question.question_type == 'mcq' %}
+                        <span class="result-icon {% if answer.selected_choice.is_correct %}correct{% else %}incorrect{% endif %}">
+                            <i class="bi {% if answer.selected_choice.is_correct %}bi-check-lg{% else %}bi-x-lg{% endif %}"></i>
+                        </span>
+                    {% else %}
+                        <span class="result-icon" style="background: var(--info-100); color: var(--info)"><i class="bi bi-pencil-square"></i></span>
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <div class="text-muted small mb-1">Question {{ forloop.counter }} &middot; {{ answer.question.marks }} marks</div>
+                        <p class="mb-2 fw-600">{{ answer.question.text }}</p>
+
+                        {% if answer.question.question_type == 'mcq' %}
+                            <p class="mb-0">
+                                Your answer:
+                                {% if answer.selected_choice %}<strong>{{ answer.selected_choice.text }}</strong>{% else %}<span class="text-muted">Not answered</span>{% endif %}
+                                {% if answer.selected_choice.is_correct %}
+                                    <span class="badge badge-soft-success ms-2">Correct</span>
+                                {% else %}
+                                    <span class="badge badge-soft-danger ms-2">Incorrect</span>
+                                {% endif %}
+                            </p>
+                        {% else %}
+                            <p class="mb-1 text-muted small">Your answer:</p>
+                            <p class="surface-2 rounded p-2 mb-2">{{ answer.essay_text|default:"Not answered" }}</p>
+                            <span class="badge badge-soft-info">Awarded: {{ answer.awarded_marks|default:0 }} / {{ answer.question.marks }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+{% endblock %}

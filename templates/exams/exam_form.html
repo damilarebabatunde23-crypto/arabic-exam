@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_new %}Create Exam{% else %}Edit Exam{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h3><i class="bi {% if is_new %}bi-plus-circle{% else %}bi-pencil-square{% endif %} me-2"></i>{% if is_new %}Create New Exam{% else %}Edit Exam{% endif %}</h3>
+        <div class="subtitle">Set the exam's basic details, then add questions in the next step.</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-4">
+        <form method="post" class="col-lg-9">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="mb-3">
+                <label class="form-label">{{ form.title.label }}</label>
+                {{ form.title }}
+                {% for error in form.title.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">{{ form.description.label }}</label>
+                {{ form.description }}
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">{{ form.duration_minutes.label }}</label>
+                    {{ form.duration_minutes }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">{{ form.start_time.label }}</label>
+                    {{ form.start_time }}
+                    {% for error in form.start_time.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">{{ form.end_time.label }}</label>
+                    {{ form.end_time }}
+                    {% for error in form.end_time.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+            </div>
+            <div class="form-check mb-4">
+                {{ form.is_active }}
+                <label class="form-check-label">{{ form.is_active.label }}</label>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-arrow-right-circle me-1"></i>{% if is_new %}Create and Add Questions{% else %}Save Changes{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

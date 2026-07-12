@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load exam_extras %}
+{% block title %}{{ exam.title }}{% endblock %}
+{% block content %}
+<div class="exam-topbar">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h5 class="fw-800 mb-0">{{ exam.title }}</h5>
+            <div class="text-muted small">{{ questions|length }} questions &middot; {{ exam.total_marks }} marks</div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="q-nav" id="qNav">
+                {% for question in questions %}
+                    <a href="#q{{ question.id }}" class="q-nav-btn" data-qid="{{ question.id }}">{{ forloop.counter }}</a>
+                {% endfor %}
+            </div>
+            <span class="timer-pill" id="exam-timer"><i class="bi bi-stopwatch-fill"></i><span id="timer-text">--:--</span></span>
+        </div>
+    </div>
+    <div class="exam-progress-track">
+        <div class="exam-progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+</div>
+
+<form method="post" id="exam-form">
+    {% csrf_token %}
+    {% for question in questions %}
+        <div class="card question-card mb-3" id="q{{ question.id }}" data-question-card="{{ question.id }}">
+            <div class="card-body">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <span class="q-index">{{ forloop.counter }}</span>
+                    <div class="flex-grow-1">
+                        <div class="text-muted small mb-1">{{ question.marks }} marks &middot; {% if question.question_type == 'mcq' %}Multiple Choice{% else %}Essay Question{% endif %}</div>
+                        <p class="mb-0 fw-600">{{ question.text }}</p>
+                    </div>
+                </div>
+
+                {% if question.question_type == 'mcq' %}
+                    <div data-question-type="mcq" data-qid="{{ question.id }}">
+                        {% for choice in question.choices.all %}
+                            <label class="choice-option">
+                                <input type="radio"
+                                       name="question_{{ question.id }}"
+                                       value="{{ choice.id }}"
+                                       {% if existing_answers|get_item:question.id and existing_answers|get_item:question.id.selected_choice_id == choice.id %}checked{% endif %}>
+                                <span>{{ choice.text }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <textarea name="question_{{ question.id }}" class="form-control" rows="4" data-question-type="essay" data-qid="{{ question.id }}"
+                              placeholder="Write your answer here">{% if existing_answers|get_item:question.id %}{{ existing_answers|get_item:question.id.essay_text }}{% endif %}</textarea>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="d-flex gap-2 mb-5">
+        <button type="submit" name="action" value="save" class="btn btn-outline-secondary"><i class="bi bi-save2 me-1"></i>Save Answers</button>
+        <button type="submit" name="action" value="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to submit the exam? You will not be able to make changes after submitting.');"><i class="bi bi-send-check me-1"></i>Submit Exam</button>
+    </div>
+</form>
+
+<form method="post" id="auto-submit-form" action="{% url 'exams:take_exam' attempt.id %}" style="display:none">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="submit">
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let timeLeft = {{ time_left_seconds }};
+    const timerWrap = document.getElementById('exam-timer');
+    const timerText = document.getElementById('timer-text');
+
+    function renderTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerText.textContent = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+        if (timeLeft <= 60) {
+            timerWrap.classList.add('is-danger');
+        }
+    }
+    renderTimer();
+
+    const interval = setInterval(function () {
+        timeLeft -= 1;
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            timerText.textContent = '00:00';
+            document.getElementById('auto-submit-form').submit();
+            return;
+        }
+        renderTimer();
+    }, 1000);
+
+    // Progress tracking
+    const totalQuestions = {{ questions|length }};
+    const progressFill = document.getElementById('progressFill');
+
+    function isAnswered(qid) {
+        const mcqWrap = document.querySelector('[data-question-type="mcq"][data-qid="' + qid + '"]');
+        if (mcqWrap) {
+            return !!mcqWrap.querySelector('input[type="radio"]:checked');
+        }
+        const essay = document.querySelector('[data-question-type="essay"][data-qid="' + qid + '"]');
+        return essay && essay.value.trim().length > 0;
+    }
+
+    function refreshProgress() {
+        let answered = 0;
+        document.querySelectorAll('.q-nav-btn').forEach(function (btn) {
+            const qid = btn.getAttribute('data-qid');
+            const card = document.querySelector('[data-question-card="' + qid + '"]');
+            if (isAnswered(qid)) {
+                answered += 1;
+                btn.classList.add('is-answered');
+                card && card.classList.add('is-answered');
+            } else {
+                btn.classList.remove('is-answered');
+                card && card.classList.remove('is-answered');
+            }
+        });
+        progressFill.style.width = totalQuestions ? Math.round((answered / totalQuestions) * 100) + '%' : '0%';
+    }
+
+    document.getElementById('exam-form').addEventListener('change', refreshProgress);
+    document.getElementById('exam-form').addEventListener('input', refreshProgress);
+    refreshProgress();
+</script>
+{% endblock %}

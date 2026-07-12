@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-shell">
+        <div class="auth-brand-panel">
+            <div>
+                <div class="mark"><i class="bi bi-mortarboard-fill"></i></div>
+                <h2>Arabic Exam Platform</h2>
+                <p>Create your exams, grade your students' answers, and publish results with one click.</p>
+            </div>
+            <div class="d-flex gap-4 small opacity-75">
+                <span><i class="bi bi-clock-history me-1"></i> Timed exams</span>
+                <span><i class="bi bi-patch-check me-1"></i> Auto & manual grading</span>
+            </div>
+        </div>
+        <div class="auth-form-panel">
+            <h3 class="mb-1">Login</h3>
+            <p class="text-muted mb-4">Welcome back, sign in to continue your work.</p>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                {% if form.errors %}
+                    <div class="alert alert-danger py-2"><i class="bi bi-exclamation-circle me-1"></i>Incorrect username or password.</div>
+                {% endif %}
+                <button type="submit" class="btn btn-primary w-100 mt-2">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                </button>
+            </form>
+            <p class="text-center mt-4 mb-0 text-muted">
+                Don't have an account? <a href="{% url 'accounts:register' %}">Sign up as a student</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

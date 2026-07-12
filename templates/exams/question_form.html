@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Question - {{ exam.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h3><i class="bi {% if question %}bi-pencil-square{% else %}bi-plus-circle{% endif %} me-2"></i>{% if question %}Edit Question{% else %}Add Question{% endif %}</h3>
+        <div class="subtitle">{{ exam.title }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-4">
+        <form method="post" class="col-lg-9">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">{{ form.question_type.label }}</label>
+                    {{ form.question_type }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">{{ form.marks.label }}</label>
+                    {{ form.marks }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">{{ form.order.label }}</label>
+                    {{ form.order }}
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">{{ form.text.label }}</label>
+                {{ form.text }}
+            </div>
+
+            <div id="choices-section" class="mb-4">
+                <label class="form-label d-block">Choices <span class="text-muted fw-normal">(check the box next to the correct choice)</span></label>
+                {{ formset.management_form }}
+                {% for choice_form in formset %}
+                    <div class="d-flex gap-2 align-items-center mb-2">
+                        {{ choice_form.id }}
+                        <div class="flex-grow-1">{{ choice_form.text }}</div>
+                        <label class="d-flex align-items-center gap-1 small text-muted mb-0" style="white-space: nowrap;">
+                            {{ choice_form.is_correct }} Correct
+                        </label>
+                        {% if choice_form.DELETE %}
+                            <label class="d-flex align-items-center gap-1 small text-danger mb-0" style="white-space: nowrap;">
+                                {{ choice_form.DELETE }} Delete
+                            </label>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Save</button>
+            <a href="{% url 'exams:question_list' exam.id %}" class="btn btn-link">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const typeSelect = document.querySelector('[name="question_type"]');
+    const choicesSection = document.getElementById('choices-section');
+
+    function toggleChoices() {
+        choicesSection.style.display = (typeSelect.value === 'essay') ? 'none' : 'block';
+    }
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', toggleChoices);
+        toggleChoices();
+    }
+</script>
+{% endblock %}

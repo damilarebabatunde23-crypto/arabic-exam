@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Submissions - {{ exam.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-inbox me-2"></i>{{ exam.title }}</h3>
+        <div class="subtitle">Student submissions and grading status</div>
+    </div>
+    <form method="post" action="{% url 'exams:release_results' exam.id %}" onsubmit="return confirm('Graded results will be published to all students. Continue?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success"><i class="bi bi-megaphone me-1"></i>Release Graded Results</button>
+    </form>
+</div>
+
+{% if not attempts %}
+    <div class="empty-state">
+        <i class="bi bi-people"></i>
+        No students have taken this exam yet.
+    </div>
+{% else %}
+<div class="table-responsive">
+<table class="table table-modern align-middle mb-0">
+    <thead>
+        <tr>
+            <th>Student</th>
+            <th>Status</th>
+            <th>MCQ Score</th>
+            <th>Essay Score</th>
+            <th>Total</th>
+            <th>Released</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for attempt in attempts %}
+        <tr>
+            <td class="fw-600">{{ attempt.student.first_name|default:attempt.student.username }}</td>
+            <td>
+                {% if attempt.status == 'in_progress' %}
+                    <span class="badge badge-soft-warning">{{ attempt.get_status_display }}</span>
+                {% elif attempt.status == 'submitted' %}
+                    <span class="badge badge-soft-info">{{ attempt.get_status_display }}</span>
+                {% else %}
+                    <span class="badge badge-soft-success">{{ attempt.get_status_display }}</span>
+                {% endif %}
+            </td>
+            <td>{{ attempt.auto_score }}</td>
+            <td>{{ attempt.essay_score }}</td>
+            <td class="fw-600">{{ attempt.total_score }} / {{ exam.total_marks }}</td>
+            <td>
+                {% if attempt.is_released %}
+                    <span class="badge badge-soft-success"><i class="bi bi-check2"></i></span>
+                {% else %}
+                    <span class="badge badge-soft-muted">&mdash;</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if attempt.status != 'in_progress' %}
+                    <a href="{% url 'exams:grade_attempt' attempt.id %}" class="btn btn-sm btn-outline-primary">
+                        {% if exam.has_essay_questions %}<i class="bi bi-pencil-square me-1"></i>Grade{% else %}<i class="bi bi-eye me-1"></i>View{% endif %}
+                    </a>
+                {% else %}
+                    <span class="text-muted small">Not submitted yet</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

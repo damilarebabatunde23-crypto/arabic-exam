@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Questions - {{ exam.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-list-check me-2"></i>{{ exam.title }}</h3>
+        <div class="subtitle">Total marks: <strong>{{ exam.total_marks }}</strong> &middot; Questions: {{ questions|length }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'exams:bulk_add_questions' exam.id %}" class="btn btn-primary"><i class="bi bi-list-ol me-1"></i>Add Multiple Choice Questions</a>
+        <a href="{% url 'exams:question_add' exam.id %}" class="btn btn-outline-secondary"><i class="bi bi-plus-circle me-1"></i>Add Single Question</a>
+    </div>
+</div>
+
+{% if not questions %}
+    <div class="empty-state">
+        <i class="bi bi-patch-question"></i>
+        <p class="mb-3">No questions yet. Add your first batch of multiple choice questions, or add a single question (e.g. an essay question).</p>
+        <a href="{% url 'exams:bulk_add_questions' exam.id %}" class="btn btn-primary"><i class="bi bi-list-ol me-1"></i>Add Multiple Choice Questions</a>
+    </div>
+{% endif %}
+
+{% for question in questions %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+            <div class="d-flex align-items-start gap-3">
+                <span class="q-index">{{ forloop.counter }}</span>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge {% if question.question_type == 'mcq' %}badge-soft-info{% else %}badge-soft-warning{% endif %}">
+                            {{ question.get_question_type_display }}
+                        </span>
+                        <span class="text-muted small">{{ question.marks }} marks</span>
+                    </div>
+                    <p class="mb-2 fw-600">{{ question.text }}</p>
+                    {% if question.question_type == 'mcq' %}
+                        <ul class="list-unstyled mb-0">
+                            {% for choice in question.choices.all %}
+                                <li class="d-flex align-items-center gap-2 mb-1">
+                                    {% if choice.is_correct %}
+                                        <i class="bi bi-check-circle-fill" style="color: var(--success)"></i>
+                                    {% else %}
+                                        <i class="bi bi-circle text-muted"></i>
+                                    {% endif %}
+                                    <span class="{% if choice.is_correct %}fw-600{% endif %}">{{ choice.text }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-shrink-0">
+                <a href="{% url 'exams:question_edit' question.id %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                <form method="post" action="{% url 'exams:question_delete' question.id %}" onsubmit="return confirm('Delete this question?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<a href="{% url 'exams:teacher_dashboard' %}" class="btn btn-link px-0"><i class="bi bi-arrow-left me-1"></i>Back to Teacher Dashboard</a>
+{% endblock %}
